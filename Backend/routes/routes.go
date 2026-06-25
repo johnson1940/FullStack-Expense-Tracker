@@ -8,6 +8,7 @@ import (
 
 	// Replace with your own module path (see note in main.go).
 	"expense-tracker/handlers"
+	"expense-tracker/middleware"
 )
 
 // Setup attaches all our routes to the router. main() passes the router
@@ -20,18 +21,29 @@ func Setup(r *gin.Engine) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// A route group lets related endpoints share a common URL prefix.
-	// Everything inside this group is automatically prefixed with "/auth",
-	// so the full paths become POST /auth/signup and POST /auth/login.
-	//
-	// Groups are also where you'd later attach middleware to a whole set of
-	// routes at once — for example, wrapping your expense routes in a JWT
-	// auth check so only logged-in users can reach them.
+	// 1. Public Auth Routes
 	auth := r.Group("/auth")
 	{
-		// We pass the handler function itself (no parentheses) — Gin calls
-		// it for us whenever a matching request arrives.
 		auth.POST("/signup", handlers.Signup)
 		auth.POST("/login", handlers.Login)
+	}
+
+	// 2. Protected Expense Routes
+	// middleware.AuthRequired() ensures only logged-in users with a valid JWT can enter
+	expenses := r.Group("/expenses")
+	expenses.Use(middleware.AuthRequired())
+	{
+		expenses.POST("/", handlers.CreateExpense) // POST /expenses/
+		expenses.GET("/", handlers.ListExpenses)
+		expenses.PUT("/:id", handlers.UpdateExpense)
+		expenses.DELETE("/:id", handlers.DeleteExpense)
+	}
+
+	// 3. Protected Category Routes
+	categories := r.Group("/categories")
+	categories.Use(middleware.AuthRequired())
+	{
+		categories.GET("/", handlers.ListCategories)
+		categories.POST("/", handlers.CreateCategory)
 	}
 }

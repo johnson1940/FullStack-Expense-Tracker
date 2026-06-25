@@ -27,6 +27,11 @@ func main() {
 	//    with logging and crash-recovery middleware already attached.
 	r := gin.Default()
 
+	// Configure trusted proxies to resolve the Gin warning.
+	// By setting this to nil, we tell Gin not to trust any proxies,
+	// which is the safest default.
+	r.SetTrustedProxies(nil)
+
 	// 4. Register all our routes (GET /health, POST /auth/signup, /auth/login).
 	routes.Setup(r)
 

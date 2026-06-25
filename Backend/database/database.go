@@ -58,10 +58,53 @@ func Connect() {
 	//
 	// As you add more models later (Expense, Category), you list them all
 	// here: db.AutoMigrate(&models.User{}, &models.Expense{}, ...)
-	db.AutoMigrate(&models.User{})
+	if err := db.AutoMigrate(
+		&models.User{},
+		&models.Category{},
+		&models.Expense{}, // This will now use the updated struct
+	); err != nil {
+		log.Fatal("failed to run database migrations:", err)
+	}
+
+	// Seed the database with default categories
+	seedCategories(db)
 
 	// Store the connection in our package-level variable so the rest of
 	// the app can use it.
 	DB = db
 	log.Println("database connected & migrated")
+}
+
+// seedCategories populates the database with 18 default categories if the table is empty.
+func seedCategories(db *gorm.DB) {
+	var count int64
+	db.Model(&models.Category{}).Count(&count)
+
+	if count == 0 {
+		defaultCategories := []models.Category{
+			{Name: "Housing"},
+			{Name: "Utilities"},
+			{Name: "Groceries"},
+			{Name: "Dining Out"},
+			{Name: "Transportation"},
+			{Name: "Insurance"},
+			{Name: "Healthcare"},
+			{Name: "Debt/Loans"},
+			{Name: "Entertainment"},
+			{Name: "Personal Care"},
+			{Name: "Education"},
+			{Name: "Clothing/Shopping"},
+			{Name: "Savings/Investments"},
+			{Name: "Travel"},
+			{Name: "Gifts/Donations"},
+			{Name: "Subscriptions"},
+			{Name: "Pets"},
+			{Name: "Miscellaneous"},
+		}
+		if err := db.Create(&defaultCategories).Error; err != nil {
+			log.Println("failed to seed default categories:", err)
+		} else {
+			log.Println("successfully seeded 18 default categories")
+		}
+	}
 }
